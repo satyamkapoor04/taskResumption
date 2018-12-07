@@ -14,12 +14,17 @@ public class PastRetrieval {
     private String title;
     private String start;
     private String end;
+    private String executable;
+    private String file;
     
-    public PastRetrieval (String p, String t, String s, String e) {
+    public PastRetrieval (String p, String t, String s, String e, String ex, String f) {
         this.program = p;
         this.title = t;
         this.start = s;
         this.end = e;
+        this.executable = ex;
+        this.file = f;
+        
     }
     
     public String getProgram () {
@@ -38,4 +43,11 @@ public class PastRetrieval {
         return this.end;
     }
     
+    public String getFile() {
+        return this.file;
+    }
+    
+    public String getExecutable () {
+        return this.executable;
+    }
 }

@@ -73,7 +73,7 @@ public class SuggestionBox {
         
         runningButton.addActionListener (new ActionListener() {
             public void actionPerformed (ActionEvent e) {
-                new GuiComponent().go();
+                GuiComponent.getInstance().go();
             }
         });
         

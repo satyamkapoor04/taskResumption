@@ -16,11 +16,19 @@ public class Places {
     private String name;
     private String date;
     private Date dateFormat;
+    private String location;
     
     public Places (String n, String d, Date dd) {
         this.name = n;
         this.date = d;
         this.dateFormat = dd;
+    }
+    
+    public Places (String n, String d, Date dd, String l) {
+        this.name = n;
+        this.date = d;
+        this.dateFormat = dd;
+        this.location = l;
     }
     
     public String getName () {
@@ -47,4 +55,12 @@ public class Places {
         this.date = d;
     }
     
+    
+    public void setLocation (String l) {
+        this.location = l;
+    }
+    
+    public String getLocation () {
+        return this.location;
+    }
 }

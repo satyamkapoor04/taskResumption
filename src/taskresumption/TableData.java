@@ -9,34 +9,32 @@ package taskresumption;
  *
  * @author satyam
  */
-public class TableData {
+public class TableData implements Comparable {
     
-    private Boolean delete;
     private String application;
-    private String file;
+    private String title;
     private String start;
     private String end;
     private Boolean resume;
+    private String executable;
+    private String file;
     
-    public TableData (Boolean d, String a, String f, String s, String e, Boolean r) {
-        this.delete = d;
+    public TableData (String a, String t, String s, String e, Boolean r, String ex, String f) {
         this.application = a;
-        this.file = f;
+        this.title = t;
         this.start = s;
         this.end = e;
         this.resume = r;
-    }
-    
-    public boolean getDelete () {
-        return this.delete;
+        this.executable = e;
+        this.file = f;
     }
     
     public String getApplication () {
         return this.application;
     }
     
-    public String getFile () {
-        return this.file;
+    public String getTitle () {
+        return this.title;
     }
     
     public boolean getResume () {
@@ -50,12 +48,27 @@ public class TableData {
     public String getEnd () {
         return this.end;
     }
-
-    void setDelete(boolean b) {
-         this.delete = b;
+    
+    public void setResume (boolean b) {
+        this.resume = b;
     }
     
-    void setResume (boolean b) {
-        this.resume = b;
+    public void setApplication (String a) {
+        this.application = a;
+
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        TableData t = (TableData)o;
+        return this.getApplication().compareTo(t.getApplication());
+    }
+    
+    public String getExecutable () {
+        return this.executable;
+    }
+    
+    public String getFile () {
+        return this.file;
     }
 }

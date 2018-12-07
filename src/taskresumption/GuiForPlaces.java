@@ -83,6 +83,23 @@ public class GuiForPlaces {
             }
             
             reader.close();
+            
+            new Thread() {
+                public void run () {
+                    try {
+                        for (Places p : arrayList) {
+                            Process pr = Runtime.getRuntime().exec ("cmd /c type %USERPROFILE%\\AppData\\Roaming\\Microsoft\\Windows\\Recent\\" + p.getName() + ".lnk | find \"\\\"");
+                            BufferedReader reader2 = new BufferedReader (new InputStreamReader (pr.getInputStream()));
+                            String l = reader2.readLine();
+                            p.setLocation(l);
+                        }
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            }.start();
+            
+            
             go();
             
         } catch (IOException ex) {
@@ -128,6 +145,7 @@ public class GuiForPlaces {
                     if ((p.getDateFormat().compareTo(startTime) >= 0) && (p.getDateFormat().compareTo(endTime) <= 0 )) {
                     //System.out.println (p.getDateFormat().toString() + "-" + startTime.toString());  
                     temporaryData.add (p);
+                    //System.out.println (p.getLocation());
                     }
                 }
                 int tw = table.getWidth();

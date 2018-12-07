@@ -5,6 +5,7 @@
  */
 package taskresumption;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -15,10 +16,14 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
@@ -43,87 +48,90 @@ import org.jdesktop.swingx.calendar.SingleDaySelectionModel;
  * @author satyam
  */
 public class GuiComponent {
+    public static GuiComponent guiComponent;
     JFrame mainFrame;
+    JPanel mainPanel2;
     JPanel mainPanel;
-    JButton clickButton;
-    DateTimePicker startDate;
-    DateTimePicker endDate;
     JTable table;
     CustomTableModel customTableModel;
-    ArrayList<TableData> tableData;
     SQLDatabaseHelper sqlDatabaseHelper;
     TableColumnModel tableColumnModel;
     TableColumn column;
+    GuiForDate guiForDate;
+    public static String day = null;
+    public static String date1 = null;
+    public static String date2 = null;
+    private float[] columnWidthPercentage = {20.0f,55.0f,10.0f,10.0f,5.0f};
+    JButton chooseDate;
+    JButton submit;
+    JButton launchList;
+    public static SimpleDateFormat simpleDateFormat = new SimpleDateFormat ("EEEE");
+    ArrayList<TableData> temporaryList;
+    
+    private GuiComponent () {
+        super();
+    }
+    
+    public static GuiComponent getInstance() {
+        if (guiComponent == null) {
+            guiComponent = new GuiComponent();
+        }
+        return guiComponent;
+    }
     
     public void go () {
         mainFrame = new JFrame ("Preview Action Pan");
         mainPanel = new JPanel (new MigLayout (""));
+        mainPanel2 = new JPanel (new MigLayout("","[][]push[]",""));
         
-        clickButton = new JButton ("Submit");
-        tableData = new ArrayList<>();
-        customTableModel = new CustomTableModel(tableData);
+        temporaryList = new ArrayList<>();
+        
+        customTableModel = new CustomTableModel(temporaryList);
         table = new JTable (customTableModel);
         
-        float[] columnWidthPercentage = {5.0f,20.0f,50.0f,10.0f,10.0f,5.0f};
+        chooseDate = new JButton ("Choose Date");
+        chooseDate.addActionListener(new ActionListener () {
+            public void actionPerformed (ActionEvent e) {
+                new GuiForDate().go();
+            }
+        });
+        submit = new JButton ("Submit");
+        submit.addActionListener(new ActionListener () {
+            public void actionPerformed (ActionEvent e) {
+                sqlDatabaseHelper = SQLDatabaseHelper.getInstance();
+                sqlDatabaseHelper.initialize();
+                int size = temporaryList.size();
+                String app = null;
+                for (int i=0; i<size; i++) {
+                    if (!temporaryList.get(i).getApplication().equals(""))
+                        app = temporaryList.get(i).getApplication();
+                    if (temporaryList.get(i).getResume()) {
+                        sqlDatabaseHelper.updateSQL(app, temporaryList.get(i).getTitle(), temporaryList.get(i).getStart(), temporaryList.get(i).getEnd(),true);
+                    }
+                }
+                sqlDatabaseHelper.closeConnection();
+                new Toast ("Done!",3000).setVisible(true);
+            }
+        });
+        launchList = new JButton ("Launch List");
+        launchList.addActionListener(new ActionListener () {
+            public void actionPerformed (ActionEvent e) {
+                new ToDoClass().go();
+            }
+        });
         
         
         JScrollPane scroller = new JScrollPane (table);
         scroller.setHorizontalScrollBarPolicy (ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         
-        clickButton.addActionListener (new ActionListener () {
-            public void actionPerformed (ActionEvent e) {
-                Date start = null;
-                Date end = null;
-                tableData.clear();
-                tableData.trimToSize();
-                sqlDatabaseHelper = SQLDatabaseHelper.getInstance();
-                sqlDatabaseHelper.initialize();
-                try {
-                    start = DateTimePicker.simpleDateFormat.parse(startDate.getDateAndTime());
-                    end = DateTimePicker.simpleDateFormat.parse (endDate.getDateAndTime());
-                } catch (ParseException ex) {
-                    ex.printStackTrace();
-                }
-                if (start.compareTo(end) > 0) {
-                    new Toast ("Invalid Interval!",3000).setVisible(true);
-                } else {
-                    ArrayList<PastRetrieval> arrayList = sqlDatabaseHelper.getDataForGui(startDate.getDateAndTime(), endDate.getDateAndTime());
-                    for (PastRetrieval p : arrayList)
-                        tableData.add (new TableData (false,p.getProgram(),p.getTitle(),p.getStart(),p.getEnd(),true));
-                    
-                    int tw = table.getWidth();
-                    tableColumnModel = table.getColumnModel();
-                    for (int i=0; i<6; i++) {
-                        column = tableColumnModel.getColumn(i);
-                        int pWidth = Math.round (columnWidthPercentage[i]*tw);
-                        column.setPreferredWidth(pWidth);
-                    }
-                  
-                    table.revalidate();
-                    table.repaint();
-                }
-            }
-        });
+        mainPanel.add (scroller,"push, grow, wrap");
+        mainPanel2.add (chooseDate);
+        mainPanel2.add (submit);
+        mainPanel2.add (launchList);
         
-        Date date = new Date();
-        startDate = new DateTimePicker();
-        startDate.setFormats( DateFormat.getDateTimeInstance( DateFormat.SHORT, DateFormat.MEDIUM ) );
-        startDate.setTimeFormat( DateFormat.getTimeInstance( DateFormat.MEDIUM ) );
-        
-        endDate = new DateTimePicker();
-        endDate.setFormats (DateFormat.getDateTimeInstance (DateFormat.SHORT, DateFormat.MEDIUM));
-        endDate.setTimeFormat(DateFormat.getTimeInstance( DateFormat.MEDIUM));
-
-        startDate.setDate(date);
-        endDate.setDate (date);
-
-        mainPanel.add(startDate,"split 3");
-        mainPanel.add (endDate);
-        mainPanel.add (clickButton,"wrap");
-        mainPanel.add (scroller,"push, grow");
-        
-        mainFrame.getContentPane().add (mainPanel);
+        mainFrame.getContentPane().add (mainPanel,BorderLayout.CENTER);
+        mainFrame.getContentPane().add (mainPanel2,BorderLayout.SOUTH);
         mainFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         mainFrame.setLocationRelativeTo (null);
         //mainFrame.pack();
@@ -131,6 +139,97 @@ public class GuiComponent {
         mainFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         mainFrame.setMinimumSize (new Dimension (700,400));
         mainFrame.setVisible(true);
+        
+        //guiForDate = new GuiForDate();
+        //guiForDate.go();
+        new Thread () {
+            public void run () {
+                sqlDatabaseHelper = SQLDatabaseHelper.getInstance();
+                sqlDatabaseHelper.initialize();
+                ArrayList<KnnClass> knnList1 = sqlDatabaseHelper.getDataForSuggestion(15);
+                ArrayList<KnnClass> knnList2 = sqlDatabaseHelper.getDataForSuggestion(100);
+                sqlDatabaseHelper.closeConnection();
+                for (KnnClass k1 : knnList1) {
+                    for (KnnClass k2 : knnList2) {
+                        if (k1.getTitle().equals(k2.getTitle())) {
+                            k1.setCount(k2.getCount()-k1.getCount());
+                        }
+                    }
+                }
+                
+                //Bubble Sort for 5 elements
+                int len = knnList1.size();
+                int len2 = knnList1.size();
+                len = (len>5)?5:len;
+                for (int i=0; i<len; i++) {
+                    for (int j=len-1; j>0; j--) {
+                        if (knnList1.get(j).getCount()<knnList1.get(j-1).getCount()) {
+                            Collections.swap (knnList1,j,j-1);
+                        }
+                    }
+                }
+                ArrayList<KnnClass> list3 = new ArrayList<>();
+                for (int i=0; i<len; i++) {
+                    list3.add (new KnnClass (knnList1.get(i).getProgram(),knnList1.get(i).getTitle(),knnList1.get(i).getExecutable(),knnList1.get(i).getFile(),new JButton()));
+                   
+                }
+                
+               new KnnFrame().go (list3);
+            }
+        }.start();
+    }
+    
+    public void refreshData () {
+        if (date1 != null && date2 != null && day != null) {
+            sqlDatabaseHelper = SQLDatabaseHelper.getInstance();
+            sqlDatabaseHelper.initialize();
+            temporaryList.clear();
+            ArrayList<PastRetrieval> arrayList = sqlDatabaseHelper.getDataForGui(date1, date2);
+            if (day.equals ("All")) {
+                for (PastRetrieval p : arrayList) {
+                    temporaryList.add (new TableData (p.getProgram(),p.getTitle(),p.getStart(),p.getEnd(),false,p.getExecutable(),p.getFile()));
+                }
+            } else {
+                for (PastRetrieval p : arrayList) {
+                    try {
+                        Date d = SQLDatabaseHelper.simpleDateFormat.parse (p.getStart());
+                        if (day.equals(GuiComponent.simpleDateFormat.format (d))) {
+                            temporaryList.add (new TableData (p.getProgram(),p.getTitle(),p.getStart(),p.getEnd(),false,p.getExecutable(),p.getFile()));
+                        }
+                    } catch (ParseException ex) {
+                        Logger.getLogger(GuiComponent.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+            
+            sqlDatabaseHelper.closeConnection();
+            
+            Collections.sort (temporaryList);
+            
+            int size = temporaryList.size();
+            String repeat = null;
+            
+            if (size != 0) 
+                repeat = temporaryList.get(0).getApplication();
+            
+            for (int i=1; i<size; i++) {
+                if (temporaryList.get(i).getApplication().equals(repeat)) {
+                    temporaryList.get(i).setApplication("");
+                } else {
+                    repeat = temporaryList.get(i).getApplication();
+                }
+            }
+            
+            int tw = table.getWidth();
+            tableColumnModel = table.getColumnModel();
+            for (int i=0; i<5; i++) {
+                column = tableColumnModel.getColumn(i);
+                int pWidth = Math.round (columnWidthPercentage[i]*tw);
+                column.setPreferredWidth(pWidth);
+            }
+            table.revalidate();
+            table.repaint();
+        }
     }
     
 }

@@ -18,6 +18,7 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.net.URLEncoder;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -35,7 +36,7 @@ import java.util.Map;
  */
 public class ActionRunnable implements Runnable {
     
-    public  HashMap<String,String> elementList;
+    public  ArrayList<Action> elementList;
     private SQLDatabaseHelper sqlDatabaseHelper;
     private  ArrayList<Action> temporaryUse;
     
@@ -46,14 +47,15 @@ public class ActionRunnable implements Runnable {
     
     public void run () {
         try {
-            Process process = Runtime.getRuntime().exec("cmd /c powershell \"gps | where {$_.MainWindowTitle } | select name,mainwindowTitle");
+            Process process = Runtime.getRuntime().exec("cmd /c powershell \"gps | where {$_.MainWindowTitle } | select id,name,mainwindowTitle\"");
             BufferedReader reader = new BufferedReader (new InputStreamReader (process.getInputStream()));
             String line;
             line = reader.readLine();
             line = reader.readLine();
             line = reader.readLine();
             
-            elementList = new HashMap<>();
+            
+            elementList = new ArrayList<>();
             temporaryUse = new ArrayList<>();
             
             while ((line = reader.readLine()) != null) {
@@ -63,12 +65,25 @@ public class ActionRunnable implements Runnable {
                 
                 String program;
                 String title;
+                int id;
                 
                 int len = line.length();
                 int i=0;
+                int l = 0;
+                while (l<len && line.charAt(l) == ' ')
+                    l++;
+                
+                int k = l;
+                
+                while (k<len && line.charAt(k) != ' ')
+                    k++;
+              
+                id = Integer.parseInt(line.substring (l,k));
+                k++;
+                i = k;
                 while (i<len && line.charAt(i) != ' ')
                     i++;
-                program = line.substring (0,i);
+                program = line.substring (k,i);
                 while (i<len && line.charAt(i) == ' ')
                     i++;
                 int j = len-1;
@@ -76,10 +91,71 @@ public class ActionRunnable implements Runnable {
                     j--;
                 title = line.substring(i,j+1);
                 
-                elementList.put (program,title);
                 
+                elementList.add (new Action (id,program,title));
+                
+                   
                 
             }
+            
+          
+            for (Action e : elementList) {
+                
+                Process p = Runtime.getRuntime().exec("WMIC process where processid=" + String.valueOf(e.getId()) +  " get Commandline");
+                //cmd /c powershell \"get-ciminstance win32_process -Filter \"name like '%firefox.exe'\" | select CommandLine\"
+                p.waitFor();
+                BufferedReader reader2 = new BufferedReader (new InputStreamReader (p.getInputStream()));
+                
+                reader2.readLine();
+                reader2.readLine();
+                
+                line = reader2.readLine();
+                //System.out.println (line);
+                int len = line.length();
+                int i = 0;
+                while (i<len && line.charAt (i) != '"')
+                    i++;
+                
+                if (i<len) {
+                    int j = i+1;
+                    while (j<len && line.charAt(j) != '"')
+                        j++;
+                    
+                    if (j<len) {
+                        e.setExecutable(line.substring (i+1,j)); 
+                        if (e.getExecutable().equals("C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe")) {
+                            String ex = e.getTitle();
+                            int x = ex.length();
+                            int y = 0;
+                            while (y<x && ex.charAt(y) != '-')
+                                y++;
+                            ex = ex.substring(0,y-1);
+                            String url = "https://www.google.com/search?q=" + URLEncoder.encode (ex,"UTF-8") + "&ie=utf-8&oe=utf-8&client=firefox-b-ab";
+                            //System.out.println (url);
+                            e.setFile(url);
+                        }
+                        
+                        j++;
+                        while (j<len && line.charAt(j) != '"')
+                            j++;
+                        
+                        if (j<len) {
+                            i = j+1;
+                            while (i<len && line.charAt (i) != '"')
+                                i++;
+                            
+                            if (i<len) {
+                                e.setFile(line.substring(j+1,i));
+                            }
+                        }
+                    }
+                }
+                
+                //System.out.println (e.getId() + " " + e.getProgram() + " " + e.getExecutable() + " " + e.getFile());
+
+            }
+   
+           
             
             //System.out.println (elementList.size());
             
@@ -124,6 +200,8 @@ public class ActionRunnable implements Runnable {
             
         } catch (IOException ex) {
             ex.printStackTrace();
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
         
         run();
@@ -141,17 +219,17 @@ public class ActionRunnable implements Runnable {
         }*/
         for (Action e : keyValueClass.arrayList) {
             boolean isPresent = false;
-            for (Map.Entry<String,String> entry : elementList.entrySet()) {
+            for (Action entry : elementList) {
                 //System.out.println (entry.getKey());
-                if (e.getProgram().equals(entry.getKey()) && e.getTitle().equals(entry.getValue())) {
+                if (e.getProgram().equals(entry.getProgram()) && e.getTitle().equals(entry.getTitle())) {
                     isPresent = true;
                 }
             }
             if (!isPresent) {
                 //Put in SQL with start date and end date.
-                sqlDatabaseHelper.putData (e.getProgram(), e.getTitle(), e.getStartDate(), keyValueClass.newDate, isPresent);
+                sqlDatabaseHelper.putData (e.getProgram(), e.getTitle(), e.getStartDate(), keyValueClass.newDate, e.getFile(), e.getExecutable(), !isPresent);
             } else {
-                Action newAction = new Action (e.getProgram(),e.getTitle(),e.getStartDate());
+                Action newAction = new Action (e.getId(), e.getProgram(),e.getTitle(),e.getStartDate(), e.getFile(), e.getExecutable());
                 temporaryUse.add(newAction);
             }
         }
@@ -168,17 +246,17 @@ public class ActionRunnable implements Runnable {
         ObjectOutputStream oos = new ObjectOutputStream (fout);
         
         
-        for (Map.Entry<String,String> entry : elementList.entrySet()) {
+        for (Action entry : elementList) {
             //System.out.println (entry.getKey() + "-" + entry.getValue());
             boolean isPresent = false;
             for (Action action : temporaryUse) {
-                if (action.getProgram().equals(entry.getKey()) && action.getTitle().equals(entry.getValue())) {
+                if (action.getProgram().equals(entry.getProgram()) && action.getTitle().equals(entry.getTitle())) {
                     isPresent = true;
                 }
             }
             
             if (!isPresent) {
-                Action newAction = new Action (entry.getKey(),entry.getValue(),new Date());
+                Action newAction = new Action (entry.getId(), entry.getProgram(),entry.getTitle(),new Date(), entry.getFile(), entry.getExecutable());
                 temporaryUse.add (newAction);
             }
         }

@@ -15,14 +15,13 @@ import javax.swing.table.DefaultTableModel;
  */
 public class CustomTableModel extends AbstractTableModel {
     
-    private String[] columns = {"Delete","Application","File","Start","End","Resume"};
+    private String[] columns = {"Application","File","Start","End","Resume"};
     private ArrayList<TableData> data;
     
     public CustomTableModel (ArrayList<TableData> a) {
         super();
         this.data = a;
     }
-    
     
 
     @Override
@@ -39,17 +38,17 @@ public class CustomTableModel extends AbstractTableModel {
     public Object getValueAt(int rowIndex, int columnIndex) {
         switch (columnIndex) {
             case 0:
-                return (Boolean) data.get(rowIndex).getDelete();
-            case 1:
                 return data.get(rowIndex).getApplication();
+            case 1:
+                return data.get(rowIndex).getTitle();
             case 2:
-                return data.get(rowIndex).getFile();
-            case 3:
                 return data.get(rowIndex).getStart();
-            case 4:
+            case 3:
                 return data.get(rowIndex).getEnd();
-            case 5:
+            case 4:
                 return (Boolean) data.get(rowIndex).getResume();
+            default:
+                
         }
         return null;
     }
@@ -65,9 +64,7 @@ public class CustomTableModel extends AbstractTableModel {
     
     
     public boolean isCellEditable (int row, int col) {
-        if (col == 0) {
-            data.get (row).setDelete(!data.get(row).getDelete());
-        } else if (col == 5) {
+        if (col == 4) {
             data.get (row).setResume (!data.get(row).getResume());
         }
         

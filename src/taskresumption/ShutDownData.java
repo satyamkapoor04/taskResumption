@@ -33,7 +33,7 @@ public class ShutDownData {
             ObjectInputStream ois = new ObjectInputStream (new FileInputStream (file));
             KeyValueClass keyValueClass = (KeyValueClass) ois.readObject();
             for (Action a : keyValueClass.arrayList) {
-                sqlDatabaseHelper.putData(a.getProgram(),a.getTitle(),a.getStartDate(),keyValueClass.newDate,true);
+                sqlDatabaseHelper.putData(a.getProgram(),a.getTitle(),a.getStartDate(),keyValueClass.newDate, a.getFile(), a.getExecutable(), true);
             }
             sqlDatabaseHelper.closeConnection();
             ois.close();

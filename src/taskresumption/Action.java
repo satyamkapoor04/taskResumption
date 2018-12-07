@@ -14,12 +14,32 @@ import java.util.Date;
  */
 public class Action implements Serializable {
     
-    private String program;
-    private String title;
-    private Date startDate;
+    private String program = null;
+    private String title = null;
+    private Date startDate = null;
+    private String file = null;
+    private String executable = null;
+    private int id = 0;
     
     
-    public Action (String p, String t, Date s) {
+    public Action (int id, String p, String t) {
+        this.id = id;
+        this.program = p;
+        this.title = t;
+    }
+    
+    
+    public Action (int id, String p, String t, Date s, String f, String e) {
+        this.id = id;
+        this.program = p;
+        this.title = t;
+        this.startDate = s;
+        this.file = f;
+        this.executable = e;
+    }
+    
+    public Action (int id, String p, String t, Date s) {
+        this.id = id;
         this.program = p;
         this.title = t;
         this.startDate = s;
@@ -49,5 +69,29 @@ public class Action implements Serializable {
     
     public Date getStartDate () {
         return this.startDate;
+    }
+    
+    public void setFile (String f) {
+        this.file = f;
+    }
+    
+    public String getFile () {
+        return this.file;
+    }
+    
+    public void setExecutable (String e) {
+        this.executable = e;
+    }
+    
+    public String getExecutable () {
+        return this.executable;
+    }
+    
+    public int getId () {
+        return this.id;
+    }
+    
+    public void setId (int id) {
+        this.id = id;
     }
 }
